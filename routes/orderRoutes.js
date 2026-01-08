@@ -25,8 +25,8 @@ router.get('/:id', authenticate, getOrderById);
 // Update order status
 router.put('/:id/status', authenticate, updateOrderStatus);
 
-// Assign rider (ADMIN or RESTAURANT only)
-router.put('/:id/assign-rider', authenticate, authorize('ADMIN', 'RESTAURANT'), assignRider);
+// Assign rider (ADMIN, RESTAURANT, or RIDER for self-assignment)
+router.put('/:id/assign-rider', authenticate, assignRider);
 
 module.exports = router;
 

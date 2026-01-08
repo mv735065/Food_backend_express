@@ -168,12 +168,25 @@ const getOrders = asyncHandler(async (req, res, next) => {
       whereClause.restaurantId = { [Op.in]: restaurantIds };
     }
   } else if (user.role === 'RIDER') {
-    whereClause.riderId = user.id;
+    // If status is explicitly given, filter for unassigned and ready to pick-up (e.g., status=READY_FOR_PICKUP)
+    if (status === 'READY_FOR_PICKUP') {
+      // Riders can see: all orders with status READY_FOR_PICKUP that are not assigned to a rider or assigned to themselves
+      whereClause.status = 'READY_FOR_PICKUP';
+      // (Unassigned or assigned to them)
+      whereClause[Op.or] = [
+        { riderId: null },
+        { riderId: user.id }
+      ];
+    } else {
+      // Otherwise, show orders assigned to this rider
+      whereClause.riderId = user.id;
+      // Additional status filter will be applied below (if present)
+    }
   }
-  // ADMIN can see all orders, so no whereClause restriction
+  // ADMIN can see all orders
 
   // Optional status filter
-  if (status) {
+  if (status && user.role !== 'RIDER') {
     if (!Order.STATUSES.includes(status)) {
       return next(new AppError('Invalid status', 400));
     }
@@ -429,7 +442,10 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * Assign rider to order (ADMIN or RESTAURANT only)
+ * Assign rider to order
+ * - ADMIN: Can assign any rider to any order
+ * - RESTAURANT: Can assign riders to orders from their restaurants
+ * - RIDER: Can only assign themselves to orders ready for pickup
  * Body: { riderId }
  */
 const assignRider = asyncHandler(async (req, res, next) => {
@@ -454,8 +470,20 @@ const assignRider = asyncHandler(async (req, res, next) => {
     if (!restaurant) {
       return next(new AppError('You cannot manage this order', 403));
     }
+  } else if (user.role === 'RIDER') {
+    // Riders can only assign themselves
+    if (riderId !== user.id) {
+      return next(new AppError('Riders can only assign themselves to orders', 403));
+    }
+    // Riders can only assign themselves to orders that are ready for pickup and unassigned
+    if (order.status !== 'READY_FOR_PICKUP') {
+      return next(new AppError('Riders can only assign themselves to orders ready for pickup', 400));
+    }
+    if (order.riderId && order.riderId !== user.id) {
+      return next(new AppError('This order is already assigned to another rider', 400));
+    }
   } else if (user.role !== 'ADMIN') {
-    return next(new AppError('Only admin or restaurant owner can assign riders', 403));
+    return next(new AppError('Only admin, restaurant owner, or rider can assign riders', 403));
   }
 
   // Verify rider exists and has RIDER role
