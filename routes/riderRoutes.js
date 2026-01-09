@@ -12,8 +12,8 @@ const { updateOrderStatus } = require('../controllers/orderController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { AppError } = require('../middlewares/errorHandler');
 
-// All rider routes require rider auth
-router.use(authenticate, authorize('RIDER'));
+// All rider routes require rider auth (ADMIN has full access automatically via authorize middleware)
+router.use(authenticate, authorize('RIDER', 'ADMIN'));
 
 // GET /api/rider/orders
 router.get('/orders', getRiderOrders);

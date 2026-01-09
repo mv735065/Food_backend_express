@@ -11,18 +11,23 @@ const { Order, Restaurant } = require('../models');
 
 /**
  * Get orders assigned to the authenticated rider
+ * ADMIN can see all orders
  * GET /api/rider/orders
  */
 const getRiderOrders = asyncHandler(async (req, res) => {
-  const riderId = req.user.id;
+  const whereClause = {
+    status: {
+      [Op.notIn]: ['CANCELLED'],
+    },
+  };
+
+  // ADMIN can see all orders, riders see only their assigned orders
+  if (req.user.role !== 'ADMIN') {
+    whereClause.riderId = req.user.id;
+  }
 
   const orders = await Order.findAll({
-    where: {
-      riderId,
-      status: {
-        [Op.notIn]: ['CANCELLED'],
-      },
-    },
+    where: whereClause,
     include: [{ model: Restaurant, as: 'restaurant' }],
     order: [['createdAt', 'DESC']],
   });

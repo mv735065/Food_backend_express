@@ -43,13 +43,22 @@ const getRestaurants = asyncHandler(async (req, res) => {
 
 /**
  * Get restaurants owned by the authenticated user
+ * ADMIN can see all restaurants
  */
 const getMyRestaurants = asyncHandler(async (req, res) => {
+  const { Order } = require('../models');
+  const { MenuItem } = require('../models');
+  
+  // ADMIN can see all restaurants, others see only their own
+  const whereClause = req.user.role === 'ADMIN' 
+    ? {} 
+    : { ownerId: req.user.id };
+  
   const restaurants = await Restaurant.findAll({
-    where: { ownerId: req.user.id },
+    where: whereClause,
     include: [
       {
-        model: require('../models').MenuItem,
+        model: MenuItem,
         as: 'menuItems',
         required: false,
       },

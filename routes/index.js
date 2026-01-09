@@ -16,6 +16,7 @@ const riderRoutes = require('./riderRoutes');
 const paymentRoutes = require('./paymentRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const healthRoutes = require('./healthRoutes');
+const adminRoutes = require('./adminRoutes');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -26,6 +27,7 @@ router.use('/rider', riderRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/health', healthRoutes);
+router.use('/admin', adminRoutes);
 
 // Add more routes here as you create them
 // router.use('/users', userRoutes);

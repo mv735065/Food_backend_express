@@ -36,12 +36,18 @@ const authenticate = asyncHandler(async (req, res, next) => {
 
 /**
  * Role-based authorization middleware
+ * ADMIN has access to everything automatically
  * @param  {...string} roles - allowed roles
  */
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return next(new AppError('Not authenticated', 401));
+    }
+
+    // ADMIN has access to everything
+    if (req.user.role === 'ADMIN') {
+      return next();
     }
 
     if (!roles.includes(req.user.role)) {
